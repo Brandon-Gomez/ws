@@ -53,7 +53,27 @@ async function main() {
     const url = 'https://minkang.x.yupoo.com/categories/680717';
     const allProducts = await scrapeCategories(url);
 
-    
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+
+    for (const product of allProducts) {
+        try {
+            await page.goto(product.details, { timeout: 120000 }); // Aumenta el tiempo de espera a 120 segundos
+
+            // Captura el texto del atributo `data-src` de las imágenes
+            const imageSrcs = await page.$$eval('.showalbum__children.image__main img', imgs => 
+                imgs.map(img => img.getAttribute('data-src'))
+            );
+
+            console.log(`Imágenes para el producto ${product.details}:`);
+            imageSrcs.forEach(src => console.log(src));
+
+        } catch (error) {
+            console.error(`Error al cargar la página de detalles del producto: ${product.details}`, error);
+        }
+    }
+
+    await browser.close();
 
     writeFileSync('products.json', JSON.stringify(allProducts, null, 2));
 }
